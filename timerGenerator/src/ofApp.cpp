@@ -98,6 +98,13 @@ void ofApp::keyPressed(int key){
         case ' ':
             startStop();
             break;
+        case OF_KEY_UP:
+            duration += 60;
+            break;
+        case OF_KEY_DOWN:
+            if (duration >= 120) {
+                duration -= 60;
+            }
         default:
             break;
     }
