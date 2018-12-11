@@ -2,24 +2,59 @@
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-    ofSetFrameRate(60);
-    duration = 60;
-    ofResetElapsedTimeCounter();
-    
-    ofSetLogLevel(OF_LOG_VERBOSE);
-    
     // red EB4A50
     // yellow F9CD4A
     // green 4FAD9F
     // blue 20629D
     // tan F1ECE5
+    
+    ofSetFrameRate(60);
+    
+    ofSetLogLevel(OF_LOG_VERBOSE);
+    
+    ofTrueTypeFont::setGlobalDpi(72);
+    futuraBold.load("Futura-Bold-03.ttf", 120, true, true);
+    
+    reset();
+    
+}
+
+void ofApp::reset() {
+    if (isRunning) {
+        startStop();
+    }
+    isPaused = false;
+    timerAtPause = 0;
+    duration = 420;
+    
+}
+
+void ofApp::startStop() {
+    if (isRunning) {
+        isRunning = false;
+        isPaused = true;
+        timerAtPause = timerAtPause + float(ofGetElapsedTimeMillis()) / 1000;
+    } else {
+        if (isPaused) {
+            isPaused = false;
+        }
+        ofResetElapsedTimeCounter();
+        isRunning = true;
+    }
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
-    timerPosition = duration - (float(ofGetElapsedTimeMillis()) / 1000);
+    if (isRunning) {
+        timerPosition = duration - (float(ofGetElapsedTimeMillis()) / 1000) - timerAtPause;
+    } else {
+        timerPosition = duration - timerAtPause;
+    }
     angle = -90 - (timerPosition / duration) * 360;
     center = ofPoint(3 * (ofGetWindowWidth() / 4), ofGetWindowHeight() / 2);
+    int minutes = int(timerPosition / 60);
+    int seconds = timerPosition - minutes*60;
+    displayValue = ofToString(minutes, 2, '0') + ":" + ofToString(seconds, 2, '0');
 }
 
 //--------------------------------------------------------------
@@ -45,11 +80,27 @@ void ofApp::draw(){
     segment.setFillHexColor(0xEB4A50);
     segment.setFilled(true);
     segment.draw();
+    
+    
+    
+    ofSetHexColor(0xffffff);
+    ofRectangle bounds = futuraBold.getStringBoundingBox("00:00", 0, 0);
+    futuraBold.drawString(displayValue, center.x - bounds.width/2, center.y + bounds.height/2);
+    
 }
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-
+    switch (key) {
+        case 'r':
+            reset();
+            break;
+        case ' ':
+            startStop();
+            break;
+        default:
+            break;
+    }
 }
 
 //--------------------------------------------------------------

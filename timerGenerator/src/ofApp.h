@@ -8,6 +8,8 @@ class ofApp : public ofBaseApp{
 		void setup();
 		void update();
 		void draw();
+        void reset();
+        void startStop();
 
 		void keyPressed(int key);
 		void keyReleased(int key);
@@ -21,10 +23,19 @@ class ofApp : public ofBaseApp{
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
     
+    bool isRunning;
+    bool isPaused;
+    float timerAtPause;
+    
+    // drawing the circle
     float duration;
     float timerPosition;
     float angle;
     ofPoint center;
+    
+    // counter
+    ofTrueTypeFont futuraBold;
+    string displayValue;
     
 		
 };
