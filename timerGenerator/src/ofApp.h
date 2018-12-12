@@ -1,6 +1,8 @@
 #pragma once
 
 #include "ofMain.h"
+#include "ofxVideoRecorder.h"
+#include "ofQTKitGrabber.h"
 
 class ofApp : public ofBaseApp{
 
@@ -8,6 +10,8 @@ class ofApp : public ofBaseApp{
 		void setup();
 		void update();
 		void draw();
+        void drawFbo();
+        void exit();
         void reset();
         void startStop();
 
@@ -22,10 +26,14 @@ class ofApp : public ofBaseApp{
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
+        void audioIn(float * input, int bufferSize, int nChannels);
+
     
     bool isRunning;
     bool isPaused;
     float timerAtPause;
+    
+    
     
     // drawing the circle
     float duration;
@@ -37,5 +45,19 @@ class ofApp : public ofBaseApp{
     ofTrueTypeFont futuraBold;
     string displayValue;
     
-		
+    // video
+//    ofVideoGrabber      vidGrabber;
+    ofxVideoRecorder    vidRecorder;
+    ofSoundStream       soundStream;
+    bool bRecording;
+    int sampleRate;
+    int channels;
+    string fileName;
+    string fileExt;
+    
+    void recordingComplete(ofxVideoRecorderOutputFileCompleteEventArgs& args);
+    
+    ofFbo rgbFbo;
+    ofPixels recordPixels;
+    
 };

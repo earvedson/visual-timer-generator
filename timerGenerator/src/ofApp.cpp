@@ -17,6 +17,54 @@ void ofApp::setup(){
     
     reset();
     
+    // video
+    sampleRate = 44100;
+    channels = 2;
+    
+    ofSetFrameRate(60);
+    ofSetLogLevel(OF_LOG_VERBOSE);
+    
+    vidRecorder.setFfmpegLocation(ofFilePath::getAbsolutePath("ffmpeg"));
+    
+    fileName = "testMovie";
+    fileExt = ".mov"; // ffmpeg uses the extension to determine the container type. run 'ffmpeg -formats' to see supported formats
+    
+    // override the default codecs if you like
+    // run 'ffmpeg -codecs' to find out what your implementation supports (or -formats on some older versions)
+    
+//    vidRecorder.setVideoCodec("mpeg4");
+//    vidRecorder.setVideoBitrate("800k");
+//    vidRecorder.setAudioCodec("mp3");
+//    vidRecorder.setAudioBitrate("192k");
+    
+    ofAddListener(vidRecorder.outputFileCompleteEvent, this, &ofApp::recordingComplete);
+    
+    //    soundStream.listDevices();
+    //    soundStream.setDeviceID(11);
+    // soundStream.setup(this, 0, channels, sampleRate, 256, 4);
+    
+    // from audioOutputExample
+    ofSoundStreamSettings settings;
+    settings.setOutListener(this);
+    settings.sampleRate = sampleRate;
+    settings.numOutputChannels = channels;
+    settings.numInputChannels = 0;
+    settings.bufferSize = 256;
+    soundStream.setup(settings);
+    
+    // above needs to be looked at more closely
+    
+    ofSetWindowShape(1920, 1080);
+    bRecording = false;
+    ofEnableAlphaBlending();
+    
+    if(!vidRecorder.isInitialized())
+    {
+        vidRecorder.setup(fileName+ofGetTimestampString()+fileExt, 1920, 1080, 30); // no audio
+    }
+    
+    rgbFbo.allocate(1920, 1080, GL_RGB);
+    
 }
 
 void ofApp::reset() {
@@ -25,7 +73,7 @@ void ofApp::reset() {
     }
     isPaused = false;
     timerAtPause = 0;
-    duration = 420;
+    duration = 60;
     
 }
 
@@ -34,13 +82,21 @@ void ofApp::startStop() {
         isRunning = false;
         isPaused = true;
         timerAtPause = timerAtPause + float(ofGetElapsedTimeMillis()) / 1000;
+        vidRecorder.setPaused(true);
     } else {
         if (isPaused) {
             isPaused = false;
+            vidRecorder.setPaused(false);
         }
         ofResetElapsedTimeCounter();
         isRunning = true;
+        vidRecorder.start();
     }
+}
+
+void ofApp::exit(){
+    ofRemoveListener(vidRecorder.outputFileCompleteEvent, this, &ofApp::recordingComplete);
+    vidRecorder.close();
 }
 
 //--------------------------------------------------------------
@@ -51,14 +107,37 @@ void ofApp::update(){
         timerPosition = duration - timerAtPause;
     }
     angle = -90 - (timerPosition / duration) * 360;
-    center = ofPoint(3 * (ofGetWindowWidth() / 4), ofGetWindowHeight() / 2);
+    center = ofPoint(3 * (1920 / 4), 1080 / 2);
     int minutes = int(timerPosition / 60);
     int seconds = timerPosition - minutes*60;
     displayValue = ofToString(minutes, 2, '0') + ":" + ofToString(seconds, 2, '0');
+    
+//    ofImage img;
+//    ofPixels pixels;
+//    img.grabScreen(0, 0, 1920, 1080);
+//    pixels = img.getPixels();
+//    pixels.setNumChannels(3);
+//    cout << "Number of channels: " << pixels.getNumChannels() << endl;
+//    vidRecorder.addFrame(img.getPixels());
+    
+    drawFbo();
+    
+    ofPixels pixels;
+    rgbFbo.readToPixels(pixels);
+    vidRecorder.addFrame(pixels);
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
+    
+    rgbFbo.draw(0,0);
+}
+
+void ofApp::drawFbo() {
+    rgbFbo.begin();
+    
+    ofClear(0,0,0);
+    
     ofPath circle;
     circle.arc(center, 300, 300, 0, 360);
     circle.arcNegative(center, 200, 200, 0, 360);
@@ -87,6 +166,17 @@ void ofApp::draw(){
     ofRectangle bounds = futuraBold.getStringBoundingBox("00:00", 0, 0);
     futuraBold.drawString(displayValue, center.x - bounds.width/2, center.y + bounds.height/2);
     
+    rgbFbo.end();
+}
+
+void ofApp::audioIn(float *input, int bufferSize, int nChannels){
+    if(bRecording)
+        vidRecorder.addAudioSamples(input, bufferSize, nChannels);
+}
+
+//--------------------------------------------------------------
+void ofApp::recordingComplete(ofxVideoRecorderOutputFileCompleteEventArgs& args){
+    cout << "The recoded video file is now complete." << endl;
 }
 
 //--------------------------------------------------------------
@@ -105,6 +195,9 @@ void ofApp::keyPressed(int key){
             if (duration >= 120) {
                 duration -= 60;
             }
+        case 'c':
+            vidRecorder.close();
+            break;
         default:
             break;
     }
