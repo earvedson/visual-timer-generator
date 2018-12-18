@@ -57,7 +57,10 @@ class ofApp : public ofBaseApp{
     
     void recordingComplete(ofxVideoRecorderOutputFileCompleteEventArgs& args);
     
+    int timerWidth;
+    int timerHeight;
+    
     ofFbo rgbFbo;
-    ofPixels recordPixels;
+    ofPixels pixels;
     
 };

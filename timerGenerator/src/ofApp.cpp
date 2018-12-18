@@ -8,9 +8,12 @@ void ofApp::setup(){
     // blue 20629D
     // tan F1ECE5
     
+    timerWidth = 1920/2;
+    timerHeight = 1080/2;
+    
     ofSetFrameRate(60);
     
-    ofSetLogLevel(OF_LOG_VERBOSE);
+    ofSetLogLevel(OF_LOG_ERROR);
     
     ofTrueTypeFont::setGlobalDpi(72);
     futuraBold.load("Futura-Bold-03.ttf", 120, true, true);
@@ -21,7 +24,6 @@ void ofApp::setup(){
     sampleRate = 44100;
     channels = 2;
     
-    ofSetFrameRate(60);
     ofSetLogLevel(OF_LOG_VERBOSE);
     
     vidRecorder.setFfmpegLocation(ofFilePath::getAbsolutePath("ffmpeg"));
@@ -54,16 +56,16 @@ void ofApp::setup(){
     
     // above needs to be looked at more closely
     
-    ofSetWindowShape(1920, 1080);
+    ofSetWindowShape(1920/2, 1080/2);
     bRecording = false;
     ofEnableAlphaBlending();
     
-    if(!vidRecorder.isInitialized())
-    {
-        vidRecorder.setup(fileName+ofGetTimestampString()+fileExt, 1920, 1080, 30); // no audio
-    }
-    
-    rgbFbo.allocate(1920, 1080, GL_RGB);
+//    if(!vidRecorder.isInitialized())
+//    {
+//        vidRecorder.setup(fileName+ofGetTimestampString()+fileExt, 1920, 1080, 30); // no audio
+//    }
+//
+//    rgbFbo.allocate(1920, 1080, GL_RGB);
     
 }
 
@@ -82,15 +84,15 @@ void ofApp::startStop() {
         isRunning = false;
         isPaused = true;
         timerAtPause = timerAtPause + float(ofGetElapsedTimeMillis()) / 1000;
-        vidRecorder.setPaused(true);
+//        vidRecorder.setPaused(true);
     } else {
         if (isPaused) {
             isPaused = false;
-            vidRecorder.setPaused(false);
+//            vidRecorder.setPaused(false);
         }
         ofResetElapsedTimeCounter();
         isRunning = true;
-        vidRecorder.start();
+//        vidRecorder.start();
     }
 }
 
@@ -109,7 +111,7 @@ void ofApp::update(){
     angle = -90 - (timerPosition / duration) * 360;
     center = ofPoint(3 * (1920 / 4), 1080 / 2);
     int minutes = int(timerPosition / 60);
-    int seconds = timerPosition - minutes*60;
+    int seconds = ceil(timerPosition - minutes*60);
     displayValue = ofToString(minutes, 2, '0') + ":" + ofToString(seconds, 2, '0');
     
 //    ofImage img;
@@ -120,17 +122,50 @@ void ofApp::update(){
 //    cout << "Number of channels: " << pixels.getNumChannels() << endl;
 //    vidRecorder.addFrame(img.getPixels());
     
-    drawFbo();
+    // drawFbo();
     
-    ofPixels pixels;
-    rgbFbo.readToPixels(pixels);
-    vidRecorder.addFrame(pixels);
+//    rgbFbo.readToPixels(pixels);
+//    vidRecorder.addFrame(pixels);
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
     
-    rgbFbo.draw(0,0);
+ofPushMatrix();
+   ofScale(0.5, 0.5);
+//    rgbFbo.draw(0,0);
+
+    
+    ofPath circle;
+    circle.arc(center, 300, 300, 0, 360);
+    circle.arcNegative(center, 200, 200, 0, 360);
+    circle.close();
+    circle.setCircleResolution(600);
+    // ofColor background(50, 50, 50);
+    // circle.setFillColor(background);
+    circle.setFillHexColor(0xF1ECE5);
+    circle.setFilled(true);
+    circle.draw();
+    
+    ofPath segment;
+    segment.arc(center, 300, 300, angle, -90);
+    segment.arcNegative(center, 200, 200, -90, angle);
+    segment.close();
+    segment.setCircleResolution(600);
+    ofColor c(255, 0,0);
+    //segment.setFillColor(c);
+    segment.setFillHexColor(0xEB4A50);
+    segment.setFilled(true);
+    segment.draw();
+    
+    
+    
+    ofSetHexColor(0xffffff);
+    ofRectangle bounds = futuraBold.getStringBoundingBox("00:00", 0, 0);
+    futuraBold.drawString(displayValue, center.x - bounds.width/2, center.y + bounds.height/2);
+    
+        ofPopMatrix();
+    
 }
 
 void ofApp::drawFbo() {
